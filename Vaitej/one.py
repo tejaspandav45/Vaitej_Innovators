@@ -1,0 +1,20 @@
+import google.generativeai as genai
+
+# 🔑 Replace with your Gemini API key
+API_KEY = "AIzaSyAA7yvVK0YCnDpIOTfdgIabYQMv-P7hscY"
+
+try:
+    # Configure API key
+    genai.configure(api_key=API_KEY)
+
+    print("✅ API key is valid\n")
+    print("📦 Models available for this API key:\n")
+
+    for model in genai.list_models():
+        # Filter models that support text generation
+        if "generateContent" in model.supported_generation_methods:
+            print(f"- {model.name}")
+
+except Exception as e:
+    print("❌ API key is invalid or restricted")
+    print("Error:", e)

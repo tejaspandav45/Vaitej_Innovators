@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Settings | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+        
+        <div class="page-header">
+            <div>
+                <h1>Settings</h1>
+                <p>Manage your profile and startup details.</p>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            
+            <div class="dashboard-grid">
+                
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="glass" style="padding: 1.5rem;">
+                        <h3 style="margin-bottom: 1.5rem;">Company Profile</h3>
+                        
+                        <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px dashed var(--text-tertiary); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                {% if data.logo_url %}
+                                    <img src="{{ data.logo_url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                    <i data-lucide="image" style="color: var(--text-tertiary);"></i>
+                                {% endif %}
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">Logo Upload</label>
+                                <input type="file" name="logo" style="padding: 0.5rem;">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Company Name</label>
+                                <input name="company_name" value="{{ data.company_name }}" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Website URL</label>
+                                <input name="website_url" value="{{ data.website_url or '' }}" placeholder="https://">
+                            </div>
+                            <div class="input-group">
+                                <label>One-line Pitch (Tagline)</label>
+                                <input name="tagline" value="{{ data.tagline or '' }}" placeholder="e.g. Uber for X">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass" style="padding: 1.5rem;">
+                        <h3 style="margin-bottom: 1.5rem;">Market Details</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Sector</label>
+                                <select name="sector">
+                                    <option selected>{{ data.sector }}</option>
+                                    <option>Fintech</option>
+                                    <option>SaaS</option>
+                                    <option>Healthtech</option>
+                                    <option>Consumer</option>
+                                    <option>AI/ML</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Business Model</label>
+                                <select name="business_model">
+                                    <option selected>{{ data.business_model }}</option>
+                                    <option>B2B</option>
+                                    <option>B2C</option>
+                                    <option>Marketplace</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Stage</label>
+                                <select name="stage">
+                                    <option selected>{{ data.stage }}</option>
+                                    <option>Pre-Seed</option>
+                                    <option>Seed</option>
+                                    <option>Series A</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Team Size</label>
+                                <input type="number" name="team_size" value="{{ data.team_size or 1 }}">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="glass" style="padding: 1.5rem;">
+                        <h3 style="margin-bottom: 1.5rem;">Founder Details</h3>
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input name="full_name" value="{{ data.full_name }}">
+                            </div>
+                            <div class="input-group">
+                                <label>Phone</label>
+                                <input name="phone" value="{{ data.phone }}">
+                            </div>
+                            <div class="input-group">
+                                <label>LinkedIn URL</label>
+                                <input name="linkedin_url" value="{{ data.linkedin_url or '' }}">
+                            </div>
+                            <div class="input-group">
+                                <label>Location</label>
+                                <input name="location" value="{{ data.location or data.country }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass" style="padding: 1.5rem; border: 1px solid var(--accent-primary);">
+                        <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Fundraising</h3>
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Target Raise ($)</label>
+                                <input type="number" name="raise_target" value="{{ data.raise_target }}">
+                            </div>
+                            <div class="input-group">
+                                <label>Min Check Size ($)</label>
+                                <input type="number" name="min_check_size" value="{{ data.min_check_size }}">
+                            </div>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 0.5rem;">
+                                <input type="checkbox" name="actively_raising" {% if data.actively_raising %}checked{% endif %} style="width: 20px;">
+                                <span style="font-weight: 500;">Actively Raising Now</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" style="margin-top: auto;">Save Changes</button>
+
+                </div>
+
+            </div>
+        </form>
+
+    </main>
+</div>
+</body>
+</html>

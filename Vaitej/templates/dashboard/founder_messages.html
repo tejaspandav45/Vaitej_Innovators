@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Messages | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <h1 style="margin-bottom: 1.5rem;">Inbox</h1>
+
+        <div class="msg-layout">
+
+            <aside class="msg-sidebar glass">
+                {% if conversations %}
+                    {% for c in conversations %}
+                    <a href="{{ url_for('founder_messages', conversation_id=c.id) }}"
+                       class="convo-item {% if c.id == current_convo %}active{% endif %}">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ c.full_name }}</span>
+                            {% if c.last_time %}
+                            <span style="font-size: 0.75rem; color: var(--text-tertiary);">{{ c.last_time.strftime('%H:%M') }}</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">{{ c.fund_name }}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if c.unread_count > 0 %}<span style="color: var(--accent-primary);">●</span>{% endif %}
+                            {{ c.last_msg or "Start the conversation" }}
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding: 2rem; text-align: center; color: var(--text-tertiary);">
+                        No messages found. Matches will appear here once connected.
+                    </div>
+                {% endif %}
+            </aside>
+
+            <section class="chat-window">
+                {% if current_convo %}
+                    
+                    <div class="chat-header">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                {{ active_partner.full_name[0] }}
+                            </div>
+                            <div>
+                                <div>{{ active_partner.full_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 400;">
+                                    {{ active_partner.fund_name }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="messages-area" id="msgContainer">
+                        {% for m in active_chat %}
+                            <div class="msg-bubble {{ 'msg-sent' if m.sender_id == user_id else 'msg-received' }}">
+                                {{ m.message }}
+                            </div>
+                            <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: -6px; margin-bottom: 6px; 
+                                        text-align: {{ 'right' if m.sender_id == user_id else 'left' }};">
+                                {{ m.created_at.strftime('%H:%M') }}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="chat-input-area">
+                        <form method="POST" style="display: flex; gap: 10px; width: 100%;">
+                            <input name="message" placeholder="Type a message..." required style="background: rgba(255,255,255,0.05);">
+                            <button class="btn-primary" style="width: auto; padding: 0 1.5rem;">
+                                <i data-lucide="send" style="width: 18px;"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                {% else %}
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-tertiary);">
+                        <i data-lucide="message-square" style="width: 64px; height: 64px; opacity: 0.2; margin-bottom: 1rem;"></i>
+                        <h3>Select a conversation</h3>
+                    </div>
+                {% endif %}
+            </section>
+
+        </div>
+
+    </main>
+</div>
+
+<script>
+    // Auto-scroll to bottom
+    const box = document.getElementById("msgContainer");
+    if (box) box.scrollTop = box.scrollHeight;
+</script>
+
+</body>
+</html>

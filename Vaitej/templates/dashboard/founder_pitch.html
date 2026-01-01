@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pitch Hub | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <div class="page-header">
+            <div>
+                <h1>Pitch Hub</h1>
+                <p>AI-driven analysis and scoring for your pitch deck.</p>
+            </div>
+        </div>
+
+        {% if deck %}
+        <div class="dashboard-grid">
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <div class="glass" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Executive Summary</h3>
+                    <p style="color: var(--text-secondary);">
+                        {{ analysis.summary if analysis else deck.feedback_summary or "Processing analysis..." }}
+                    </p>
+                </div>
+
+                <div class="glass" style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>
+                            <h4 style="color: var(--success); font-weight: 700; margin-bottom: 1rem;">Strengths</h4>
+                            <ul class="pro-con-list">
+                                {% for s in analysis.strengths if analysis and analysis.strengths %}
+                                    <li><i data-lucide="check-circle" style="color:var(--success); width:16px;"></i> {{ s }}</li>
+                                {% else %}
+                                    <li>Analyzing...</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--danger); font-weight: 700; margin-bottom: 1rem;">Risks</h4>
+                            <ul class="pro-con-list">
+                                {% for w in analysis.weaknesses if analysis and analysis.weaknesses %}
+                                    <li><i data-lucide="alert-triangle" style="color:var(--danger); width:16px;"></i> {{ w }}</li>
+                                {% else %}
+                                    <li>Analyzing...</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="glass" style="padding: 2rem; text-align: center; height: fit-content;">
+                <h4 style="text-transform: uppercase; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 0.05em; margin-bottom: 1.5rem;">
+                    Investability Score
+                </h4>
+
+                <div class="score-circle-container" 
+                     style="background: conic-gradient(var(--accent-primary) {{ deck.deck_score }}%, rgba(255,255,255,0.05) 0); border-radius: 50%;">
+                    <div style="position: absolute; inset: 10px; background: #1e293b; border-radius: 50%;"></div>
+                    <div class="score-value">{{ deck.deck_score }}</div>
+                </div>
+
+                {% if analysis and analysis.verdict %}
+                <div style="margin-top: 1.5rem;">
+                    <span class="badge 
+                        {% if analysis.verdict == 'Invest' %}badge-success{% elif analysis.verdict == 'Pass' %}badge-danger{% else %}badge-warning{% endif %}">
+                        Verdict: {{ analysis.verdict }}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div style="margin-top: 2rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
+                    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 1rem;">
+                        Uploaded: {{ deck.created_at.strftime('%d %b %Y') }}
+                    </p>
+                    <a href="{{ deck.file_url }}" target="_blank" class="btn-outline" style="width: 100%;">
+                        <i data-lucide="file-text" style="width: 16px; margin-right: 8px;"></i> View PDF
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="glass" style="margin-top: 2rem; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h4 style="font-weight: 600;">Upload New Version</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Iterate on your deck to improve your score.</p>
+            </div>
+            <form action="{{ url_for('upload_pitch') }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 10px;">
+                <input type="file" name="pitch_deck" accept=".pdf" required style="width: auto;">
+                <button class="btn-primary">Analyze</button>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="glass" style="text-align: center; padding: 4rem; max-width: 600px; margin: 4rem auto;">
+            <i data-lucide="upload-cloud" style="width: 64px; height: 64px; color: var(--accent-primary); margin-bottom: 1.5rem;"></i>
+            <h2>Upload your Pitch Deck</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Get instant AI feedback, strength analysis, and an investor readiness score.
+            </p>
+            <form action="{{ url_for('upload_pitch') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="pitch_deck" accept=".pdf" required id="file-upload" hidden onchange="this.form.submit()">
+                <label for="file-upload" class="btn-primary" style="padding: 1rem 2rem;">
+                    Select PDF File
+                </label>
+            </form>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+</body>
+</html>

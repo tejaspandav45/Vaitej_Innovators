@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Founder Dashboard | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <header class="page-header">
+            <div>
+                <h1>Hello, {{ founder.full_name }}</h1>
+                <p>{{ founder.company_name }} &bull; {{ founder.stage }} &bull; {{ founder.sector }}</p>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-success">
+                    {{ founder.fundraising_status.replace('_', ' ').title() }}
+                </span>
+                {% if weeks_elapsed %}
+                <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 6px;">
+                    Active for {{ weeks_elapsed }} weeks
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <section class="metrics-grid">
+            <div class="glass metric-card">
+                <div>
+                    <h4>Profile Strength</h4>
+                    <div class="metric-value">{{ completion_percent }}%</div>
+                    <div class="metric-progress">
+                        <div class="metric-bar" style="width: {{ completion_percent }}%;"></div>
+                    </div>
+                </div>
+                <div class="metric-hint">
+                    {% if missing_fields %}
+                        Missing: {{ missing_fields[0] }}
+                    {% else %}
+                        All set!
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="glass metric-card">
+                <div>
+                    <h4>Pitch Readiness</h4>
+                    <div class="metric-value" style="color: {% if pitch_score > 75 %}var(--success){% elif pitch_score > 50 %}var(--warning){% else %}var(--danger){% endif %}">
+                        {{ pitch_score }}
+                    </div>
+                </div>
+                <div class="metric-hint">{{ pitch_label }}</div>
+            </div>
+
+            <div class="glass metric-card">
+                <div>
+                    <h4>Raised / Target</h4>
+                    <div class="metric-value" style="font-size: 1.8rem;">
+                        ₹{{ "{:,}".format(raise_raised or 0) }}
+                    </div>
+                    <div class="metric-hint">Goal: ₹{{ "{:,}".format(raise_target or 0) }}</div>
+                </div>
+                <div class="metric-progress">
+                    <div class="metric-bar" style="width: {{ raise_percent }}%;"></div>
+                </div>
+            </div>
+
+            <div class="glass metric-card">
+                <div>
+                    <h4>Engagement</h4>
+                    <div class="metric-value">{{ recent_views }}</div>
+                </div>
+                <div class="metric-hint">{{ expressed_interest }} investors interested</div>
+            </div>
+        </section>
+
+        {% if ai_alert %}
+        <section class="glass" style="padding: 1.25rem; margin-bottom: 2.5rem; background: rgba(99,102,241,0.1); border-color: var(--accent-primary); display: flex; gap: 1rem; align-items: center;">
+            <div style="font-size: 1.5rem;">🤖</div>
+            <div>
+                <h4 style="font-weight: 700; color: white; margin-bottom: 2px;">AI Insight</h4>
+                <p style="color: #c7d2fe; margin: 0; font-size: 0.9rem;">{{ ai_alert }}</p>
+            </div>
+        </section>
+        {% endif %}
+
+        <div class="dashboard-grid">
+
+            <section>
+                <h3 style="margin-bottom: 1.25rem; font-weight: 700;">Suggested Actions</h3>
+                <div class="actions-grid">
+                    
+                    {% if missing_fields %}
+                    <div class="action-card">
+                        <h4>Complete Profile</h4>
+                        <p style="flex:1; color: var(--text-secondary); font-size: 0.85rem;">
+                            Boost your visibility by filling in missing details: {{ missing_fields[:2]|join(', ') }}...
+                        </p>
+                        <a href="{{ url_for('founder_settings') }}" class="btn-primary">Update Now</a>
+                    </div>
+                    {% endif %}
+
+                    <div class="action-card">
+                        <h4>Pitch Deck</h4>
+                        <p style="flex:1; color: var(--text-secondary); font-size: 0.85rem;">
+                            {% if has_deck %}
+                                Analyze your latest version or upload a new one to improve your score.
+                            {% else %}
+                                Upload your deck to get an instant AI evaluation and score.
+                            {% endif %}
+                        </p>
+                        <a href="{{ url_for('founder_pitch') }}" class="btn-outline">
+                            {% if has_deck %}Manage Deck{% else %}Upload Deck{% endif %}
+                        </a>
+                    </div>
+
+                    <div class="action-card">
+                        <h4>Investor Matches</h4>
+                        <p style="flex:1; color: var(--text-secondary); font-size: 0.85rem;">
+                            We found {{ total_matches }} investors that match your criteria.
+                        </p>
+                        <a href="{{ url_for('founder_matches') }}" class="btn-outline">View Matches</a>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="glass" style="padding: 1.5rem; height: fit-content;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="font-weight: 700; font-size: 1.1rem;">Live Activity</h3>
+                </div>
+
+                <ul class="activity-list">
+                    {% for item in activity_feed %}
+                    <li>
+                        <div class="activity-icon">
+                            {% if item.type == 'view' %}
+                                <i data-lucide="eye" style="color: var(--text-tertiary);"></i>
+                            {% elif item.type == 'match' %}
+                                <i data-lucide="zap" style="color: var(--warning);"></i>
+                            {% else %}
+                                <i data-lucide="message-circle" style="color: var(--accent-primary);"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+                                {% if item.type == 'view' %}Profile Viewed{% elif item.type == 'match' %}New Match{% else %}Message{% endif %}
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                {{ item.detail }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px;">
+                                {{ item.created_at.strftime('%d %b %H:%M') }}
+                            </div>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li style="justify-content: center; color: var(--text-tertiary); font-style: italic;">
+                        No recent activity.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Founder Onboarding | Vaitej Ventures</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<div class="ambient-light">
+    <div class="light-orb orb-1"></div>
+    <div class="light-orb orb-2"></div>
+    <div class="light-orb orb-3"></div>
+</div>
+<div class="noise-overlay"></div>
+<div class="onboarding-container">
+
+  <div class="onboarding-header">
+    <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}" />
+    <h2>Founder Onboarding</h2>
+    <p>Required fields help investors trust your profile.</p>
+  </div>
+
+  <form method="POST" class="onboarding-form">
+
+    <!-- ACCOUNT -->
+    <h4>Account Information</h4>
+    <div class="grid">
+      <input name="full_name" required placeholder="Full Name *">
+      <input type="email" name="email" required placeholder="Email *">
+      <input type="password" name="password" required placeholder="Password *">
+      <input name="phone" required placeholder="Phone *">
+      <input name="country" required placeholder="Country *">
+    </div>
+
+    <hr>
+
+    <!-- STARTUP -->
+    <h4>Startup Details</h4>
+    <div class="grid">
+      <input name="company_name" required placeholder="Company Name *">
+      <input type="number" name="founding_year" required placeholder="Founding Year *">
+
+      <select name="stage" required>
+        <option value="">Current Stage *</option>
+        <option>Idea</option>
+        <option>Pre-seed</option>
+        <option>Seed</option>
+        <option>Series A+</option>
+      </select>
+
+      <input name="sector" required placeholder="Sector *">
+      <input name="business_model" required placeholder="Business Model *">
+
+      <select name="actively_raising" required>
+        <option value="">Actively Raising? *</option>
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <button class="primary-btn">Create Founder Account</button>
+
+  </form>
+
+</div>
+
+</body>
+</html>

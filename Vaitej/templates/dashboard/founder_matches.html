@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Investor Matches | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <div class="page-header">
+            <div>
+                <h1>Investor Matches</h1>
+                <p>AI-curated investors aligned with your sector, stage, and geography.</p>
+            </div>
+            {% if matches %}
+            <a href="{{ url_for('generate_matches') }}" class="btn-outline">
+                <i data-lucide="refresh-cw" style="width:16px; margin-right:8px;"></i> Refresh
+            </a>
+            {% endif %}
+        </div>
+
+        {% if matches %}
+        <div class="matches-grid">
+            {% for m in matches %}
+            <div class="glass match-card">
+                
+                <div class="match-header-row">
+                    <div>
+                        <div class="fund-name">{{ m.fund_name }}</div>
+                        <div class="investor-name">{{ m.investor_name }}</div>
+                    </div>
+                    <div class="match-percentage" 
+                         style="color: {% if m.match_score >= 80 %}var(--success){% else %}var(--warning){% endif %};">
+                        {{ m.match_score }}% Match
+                    </div>
+                </div>
+
+                <div class="match-tags">
+                    <span class="tag">{{ m.investment_stage }}</span>
+                    <span class="tag">{{ m.sector_focus }}</span>
+                    <span class="tag">{{ m.geography_focus or 'Global' }}</span>
+                    {% if m.typical_check_min %}
+                    <span class="tag">${{ "{:,}".format(m.typical_check_min) }}+</span>
+                    {% endif %}
+                </div>
+
+                {% if m.ai_reason %}
+                <div class="ai-reason">
+                    <strong style="display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px; opacity:0.7;">
+                        Why we picked this:
+                    </strong>
+                    {{ m.ai_reason }}
+                </div>
+                {% endif %}
+
+                <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    {% if m.status == 'interested' %}
+                        <button class="btn-outline" style="grid-column: span 2; border-color: var(--success); color: var(--success); cursor: default;">
+                            <i data-lucide="check" style="width:16px; margin-right:6px;"></i> Requested
+                        </button>
+                    {% else %}
+                        {% if m.status == 'saved' %}
+                            <a href="{{ url_for('update_match_status', match_id=m.match_id, action='new') }}" class="btn-outline">
+                                <i data-lucide="star" style="width:16px; fill:currentColor; margin-right:6px;"></i> Saved
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('update_match_status', match_id=m.match_id, action='saved') }}" class="btn-outline">
+                                Save
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('update_match_status', match_id=m.match_id, action='interested') }}" class="btn-primary">
+                            Connect
+                        </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="glass" style="text-align: center; padding: 4rem; max-width: 600px; margin: 0 auto;">
+            <i data-lucide="search" style="width: 48px; height: 48px; color: var(--text-tertiary); margin-bottom: 1rem;"></i>
+            <h3>No matches yet</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Complete your profile settings to help our AI find the best investors for you.
+            </p>
+            <a href="{{ url_for('generate_matches') }}" class="btn-primary">Generate Matches</a>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+</body>
+</html>

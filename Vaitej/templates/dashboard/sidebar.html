@@ -1,0 +1,104 @@
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}"
+             class="sidebar-logo"
+             alt="Vaitej Ventures"
+             onerror="this.style.display='none'"> 
+        <span class="sidebar-brand">Vaitej Ventures</span>
+
+        <button class="collapse-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar">
+            <i data-lucide="chevrons-left"></i>
+        </button>
+    </div>
+
+    <div class="role-badge">
+        {{ session.get('role') | default('User') }} Workspace
+    </div>
+
+    <nav class="sidebar-nav">
+
+        {% if session.get('role') == 'founder' %}
+            <a href="{{ url_for('founder_home') }}"
+               class="sidebar-link {% if request.path == '/founder/home' %}active{% endif %}"
+               data-tooltip="Home">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ url_for('founder_matches') }}"
+               class="sidebar-link {% if '/founder/matches' in request.path %}active{% endif %}"
+               data-tooltip="Investor Matches">
+                <i data-lucide="handshake"></i>
+                <span>Matches</span>
+            </a>
+
+            <a href="{{ url_for('founder_pitch') }}"
+               class="sidebar-link {% if '/founder/pitch' in request.path %}active{% endif %}"
+               data-tooltip="Pitch Hub">
+                <i data-lucide="presentation"></i>
+                <span>Pitch Hub</span>
+            </a>
+
+            <a href="{{ url_for('founder_traction') }}"
+               class="sidebar-link {% if '/founder/traction' in request.path %}active{% endif %}"
+               data-tooltip="Traction">
+                <i data-lucide="trending-up"></i>
+                <span>Traction</span>
+            </a>
+
+            <a href="{{ url_for('founder_messages') }}"
+               class="sidebar-link {% if '/founder/messages' in request.path %}active{% endif %}"
+               data-tooltip="Messages">
+                <i data-lucide="message-square"></i>
+                <span>Messages</span>
+            </a>
+
+            <a href="{{ url_for('founder_settings') }}"
+               class="sidebar-link {% if '/founder/settings' in request.path %}active{% endif %}"
+               data-tooltip="Settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+            </a>
+        {% endif %}
+
+        {% if session.get('role') == 'investor' %}
+            <a href="{{ url_for('investor_home') }}" class="sidebar-link active">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="sidebar-link"><i data-lucide="rocket"></i><span>Deal Flow</span></a>
+            <a href="#" class="sidebar-link"><i data-lucide="message-square"></i><span>Messages</span></a>
+        {% endif %}
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn" data-tooltip="Sign Out">
+            <i data-lucide="log-out"></i>
+            <span>Log Out</span>
+        </a>
+    </div>
+
+</aside>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const btnIcon = document.querySelector('.collapse-btn i');
+        
+        sidebar.classList.toggle('collapsed');
+        
+        // Update icon direction based on state
+        if (sidebar.classList.contains('collapsed')) {
+            // Re-render icon to right chevron
+             document.querySelector('.collapse-btn').innerHTML = '<i data-lucide="chevrons-right"></i>';
+        } else {
+             document.querySelector('.collapse-btn').innerHTML = '<i data-lucide="chevrons-left"></i>';
+        }
+        lucide.createIcons();
+    }
+</script>

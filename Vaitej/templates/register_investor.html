@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Investor Onboarding | Vaitej Ventures</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<div class="ambient-light">
+    <div class="light-orb orb-1"></div>
+    <div class="light-orb orb-2"></div>
+    <div class="light-orb orb-3"></div>
+</div>
+<div class="noise-overlay"></div>
+<div class="onboarding-container">
+
+  <div class="onboarding-header">
+    <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}" />
+    <h2>Investor Onboarding</h2>
+    <p>High-quality profiles unlock better deal flow.</p>
+  </div>
+
+  <form method="POST" class="onboarding-form">
+
+    <!-- ACCOUNT -->
+    <h4>Account Information</h4>
+    <div class="grid">
+      <input name="full_name" required placeholder="Full Name *">
+      <input type="email" name="email" required placeholder="Email *">
+      <input type="password" name="password" required placeholder="Password *">
+      <input name="phone" required placeholder="Phone *">
+      <input name="country" required placeholder="Country *">
+    </div>
+
+    <hr>
+
+    <!-- INVESTMENT -->
+    <h4>Investment Preferences</h4>
+    <div class="grid">
+      <input name="fund_name" required placeholder="Fund / Company Name *">
+
+      <select name="investment_stage" required>
+        <option value="">Investment Stage *</option>
+        <option>Pre-seed</option>
+        <option>Seed</option>
+        <option>Series A</option>
+        <option>Growth</option>
+      </select>
+
+      <input name="sector_focus" required placeholder="Sector Focus *">
+      <input name="geography_focus" required placeholder="Geography Focus *">
+      <input type="number" name="check_size" required placeholder="Typical Check Size *">
+
+      <select name="accredited" required>
+        <option value="">Accredited Investor? *</option>
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <button class="primary-btn">Create Investor Account</button>
+
+  </form>
+
+</div>
+
+</body>
+</html>

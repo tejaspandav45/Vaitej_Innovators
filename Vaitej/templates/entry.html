@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="entry-container">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo">
+        <a href="{{ url_for('login') }}" class="login-btn">Member Login</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="entry-content">
+        <h1>Welcome to <span>Vaitej Ventures</span></h1>
+        <p>Where high-potential founders meet high-conviction investors.</p>
+
+        <div class="role-buttons">
+            <a href="{{ url_for('continue_as', role='founder') }}" class="role-card founder">
+                Continue as Founder
+            </a>
+
+            <a href="{{ url_for('continue_as', role='investor') }}" class="role-card investor">
+                Continue as Investor
+            </a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

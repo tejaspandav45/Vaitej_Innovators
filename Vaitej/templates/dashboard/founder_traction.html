@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Financial War Room | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <div class="page-header">
+            <div>
+                <h1>Financial War Room</h1>
+                <p>Runway, burn, and growth metrics.</p>
+            </div>
+            <form action="{{ url_for('analyze_traction') }}" method="POST">
+                <button class="btn-primary" style="background: var(--warning); color: #000;">
+                    ⚡ Run Stress Test
+                </button>
+            </form>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="glass metric-card">
+                <div>
+                    <h4>Monthly Revenue</h4>
+                    <div class="metric-value" style="color: var(--success);">
+                        ${{ "{:,}".format(kpis.mrr|int) }}
+                    </div>
+                </div>
+            </div>
+            <div class="glass metric-card">
+                <div>
+                    <h4>Net Burn</h4>
+                    <div class="metric-value" style="color: var(--danger);">
+                        {% if kpis.profit %}PROFITABLE{% else %}${{ "{:,}".format(kpis.burn|int) }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="glass metric-card">
+                <div>
+                    <h4>Runway</h4>
+                    <div class="metric-value">
+                        {% if kpis.profit %}∞{% else %}{{ kpis.runway|round(1) }} mo{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="glass metric-card">
+                <div>
+                    <h4>MoM Growth</h4>
+                    <div class="metric-value" style="color: var(--accent-primary);">
+                        {{ kpis.growth }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if traction_report %}
+        <div class="glass" style="border-left: 4px solid var(--accent-primary); padding: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                <i data-lucide="bot" style="color: var(--accent-primary);"></i> CFO Assessment
+            </h3>
+            <div style="line-height: 1.6; color: var(--text-secondary);">
+                {{ traction_report | safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dashboard-grid">
+            
+            <div class="glass" style="padding: 1.5rem; min-height: 400px;">
+                <canvas id="tractionChart"></canvas>
+            </div>
+
+            <div class="glass" style="padding: 1.5rem;">
+                <h3 style="margin-bottom: 1.5rem;">Update Ledger</h3>
+                <form method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <input type="hidden" name="add_metric" value="1">
+
+                    <div class="input-group">
+                        <label>Month (e.g., Jan 24)</label>
+                        <input name="month" required placeholder="mmm yy">
+                    </div>
+                    <div class="input-group">
+                        <label>Revenue ($)</label>
+                        <input name="revenue" type="number" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Expenses ($)</label>
+                        <input name="expenses" type="number" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Active Users</label>
+                        <input name="users" type="number">
+                    </div>
+
+                    <button class="btn-primary" style="margin-top: 0.5rem;">Add Entry</button>
+                </form>
+            </div>
+
+        </div>
+
+        <div class="glass" style="margin-top: 2rem; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);">
+                    <tr>
+                        <th style="padding: 1rem; color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase;">Month</th>
+                        <th style="padding: 1rem; color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase;">Revenue</th>
+                        <th style="padding: 1rem; color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase;">Expenses</th>
+                        <th style="padding: 1rem; color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase;">Net</th>
+                        <th style="padding: 1rem; color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase;">Users</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in metrics %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 1rem; font-weight: 600;">{{ m.month_label }}</td>
+                        <td style="padding: 1rem; color: var(--success);">${{ "{:,}".format(m.revenue|int) }}</td>
+                        <td style="padding: 1rem; color: var(--danger);">${{ "{:,}".format(m.expenses|int) }}</td>
+                        <td style="padding: 1rem;">
+                            {% set net = m.revenue - m.expenses %}
+                            <span style="color: {% if net >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                                ${{ "{:,}".format(net|int) }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem;">{{ m.active_users }}</td>
+                        <td style="padding: 1rem; text-align: right;">
+                            <a href="{{ url_for('delete_traction', metric_id=m.id) }}" style="color: var(--text-tertiary); font-size: 0.85rem;">
+                                <i data-lucide="trash-2" style="width: 16px;"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-tertiary);">
+                            No data entries yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+
+<script>
+const ctx = document.getElementById('tractionChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ labels | safe }},
+        datasets: [
+            {
+                label: 'Revenue',
+                data: {{ revenue | safe }},
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Expenses',
+                data: {{ expenses | safe }},
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#94a3b8' } } },
+        scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b' } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+        }
+    }
+});
+</script>
+</body>
+</html>
