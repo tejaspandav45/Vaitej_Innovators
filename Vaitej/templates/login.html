@@ -2,47 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Vaitej Ventures</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
+<body>
 
-<body class="theme-neutral">
+<div class="auth-layout">
+    <div class="ambient-light">
+        <div class="light-orb orb-1"></div>
+        <div class="light-orb orb-2"></div>
+    </div>
 
-<div class="auth-box">
+    <div class="glass auth-box">
+        <div style="margin-bottom: 2rem;">
+            <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}" 
+                 alt="Vaitej Logo" 
+                 style="height: 56px; width: auto; margin-bottom: 1.5rem; display: inline-block;">
+            
+            <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Welcome Back</h2>
+            <p style="color: var(--text-secondary);">Enter your credentials to access the portal.</p>
+        </div>
 
-    <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}" style="height:48px; margin-bottom:20px;">
+        <form method="POST">
+            {% if error %}
+                <div class="error-msg">{{ error }}</div>
+            {% endif %}
 
-    <h2>Welcome Back</h2>
-    <p style="color:#94a3b8; margin-bottom:30px;">
-        Login to continue
-    </p>
+            <div style="text-align: left;">
+                <input type="email" name="email" placeholder="Email address" required>
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
 
-    <form method="POST">
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                Sign In
+            </button>
+        </form>
 
-        <input
-            type="email"
-            name="email"
-            placeholder="Email address"
-            required
-        >
-
-        <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-        >
-
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <button type="submit" class="primary-btn">
-            Login
-        </button>
-
-    </form>
-
+        <div style="margin-top: 2rem; font-size: 0.9rem; color: var(--text-secondary);">
+            Don't have an account? <a href="{{ url_for('entry') }}" style="color: var(--accent-primary); font-weight: 600;">Get Started</a>
+        </div>
+    </div>
 </div>
 
 </body>

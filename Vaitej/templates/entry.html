@@ -2,36 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Vaitej Ventures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaitej Ventures | Connect & Capitalize</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
 
-<div class="entry-container">
-
-    <!-- TOP BAR -->
-    <div class="top-bar">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo">
-        <a href="{{ url_for('login') }}" class="login-btn">Member Login</a>
+<div class="auth-layout">
+    <div class="ambient-light">
+        <div class="light-orb orb-1"></div>
+        <div class="light-orb orb-2"></div>
     </div>
 
-    <!-- MAIN CONTENT -->
+    <nav class="top-nav">
+        <div style="font-weight: 800; font-size: 1.5rem; display: flex; align-items: center; gap: 12px;">
+             <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}" 
+                  alt="Vaitej Logo" 
+                  style="height: 32px; width: auto; display: block;">
+             Vaitej
+        </div>
+        <a href="{{ url_for('login') }}" class="btn-outline">
+            Member Login
+        </a>
+    </nav>
+
     <div class="entry-content">
-        <h1>Welcome to <span>Vaitej Ventures</span></h1>
-        <p>Where high-potential founders meet high-conviction investors.</p>
+        <h1 class="entry-title">Where Visionaries<br>Meet Capital.</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;">
+            The intelligent platform connecting high-potential founders with high-conviction investors through AI-driven matching.
+        </p>
 
         <div class="role-buttons">
-            <a href="{{ url_for('continue_as', role='founder') }}" class="role-card founder">
-                Continue as Founder
+            <a href="{{ url_for('continue_as', role='founder') }}" class="role-card">
+                <i data-lucide="rocket" class="role-icon"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700;">I'm a Founder</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    Raise capital, track traction, and get AI pitch feedback.
+                </p>
             </a>
 
-            <a href="{{ url_for('continue_as', role='investor') }}" class="role-card investor">
-                Continue as Investor
+            <a href="{{ url_for('continue_as', role='investor') }}" class="role-card">
+                <i data-lucide="briefcase" class="role-icon"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700;">I'm an Investor</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    Access curated deal flow and track portfolio metrics.
+                </p>
             </a>
         </div>
     </div>
-
 </div>
 
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
