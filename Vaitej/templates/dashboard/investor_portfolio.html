@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Portfolio | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <!-- ================= HEADER ================= -->
+        <header class="page-header">
+            <div>
+                <h1>Portfolio Intelligence</h1>
+                <p>Real-time fund performance and diversification analysis.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <span class="badge badge-neutral">
+                    {{ metrics.count }} Active Investments
+                </span>
+                <a href="{{ url_for('export_portfolio_csv') }}"
+                   class="btn-outline btn-sm">
+                    Export CSV
+                </a>
+            </div>
+        </header>
+
+        <!-- ================= KPIs ================= -->
+        <section class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 2rem;">
+
+            <div class="glass metric-card">
+                <h4>Dry Powder</h4>
+                <div class="metric-value">${{ "{:,}".format(metrics.dry_powder|int) }}</div>
+                <div class="metric-hint">Available to deploy</div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>Capital Deployed</h4>
+                <div class="metric-value">${{ "{:,}".format(metrics.deployed|int) }}</div>
+                <div class="metric-hint">
+                    {% if metrics.fund_size > 0 %}
+                        {{ ((metrics.deployed / metrics.fund_size) * 100)|int }}% of Fund
+                    {% else %}0% of Fund{% endif %}
+                </div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>Total Fund Size</h4>
+                <div class="metric-value">${{ "{:,}".format(metrics.fund_size|int) }}</div>
+                <div class="metric-hint">{{ investor.fund_name or "Your Fund" }}</div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>Total MRR</h4>
+                <div class="metric-value">${{ "{:,}".format(metrics.total_mrr|int) }}</div>
+                <div class="metric-hint">Across portfolio</div>
+            </div>
+
+        </section>
+
+        <!-- ================= MAIN GRID ================= -->
+        <div class="dashboard-grid" style="grid-template-columns: 2.5fr 1.5fr;">
+
+            <!-- ===== ACTIVE HOLDINGS ===== -->
+            <div class="glass" style="padding:1.5rem;">
+                <h3 style="margin-bottom:1.2rem;">Active Holdings</h3>
+
+                {% if portfolio %}
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="color:var(--text-tertiary); border-bottom:1px solid var(--border-subtle);">
+                            <th align="left">Startup</th>
+                            <th align="right">Invested</th>
+                            <th align="right">MRR</th>
+                            <th align="right">MOIC</th>
+                            <th align="right">IRR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in portfolio %}
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td>
+                                <a href="{{ url_for('investor_deal_view', founder_id=p.founder_id) }}"
+                                   style="color:white; font-weight:500;">
+                                    {{ p.company_name }}
+                                </a>
+                                <div class="text-secondary" style="font-size:0.75rem;">
+                                    {{ p.sector }} • {{ p.stage }}
+                                </div>
+                            </td>
+                            <td align="right">${{ "{:,}".format(p.invested_amount|int) }}</td>
+                            <td align="right">${{ "{:,}".format(p.current_mrr|int) if p.current_mrr else "--" }}</td>
+                            <td align="right">
+                                {% if p.moic %}
+                                    {{ p.moic }}x
+                                {% else %}—{% endif %}
+                            </td>
+                            <td align="right">
+                                {% if p.irr %}
+                                    {{ p.irr }}%
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <div class="empty-state">No portfolio companies yet.</div>
+                {% endif %}
+            </div>
+
+            <!-- ===== RIGHT PANEL ===== -->
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+                <!-- Sector Allocation -->
+                <div class="glass" style="padding:1.5rem;">
+                    <h3>Sector Allocation</h3>
+                    <div style="height:220px;">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Portfolio Trend -->
+                <div class="glass" style="padding:1.5rem;">
+                    <h3>Portfolio MRR Trend</h3>
+                    <div style="height:220px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== FOUNDER UPDATES ===== -->
+        <section class="glass" style="margin-top:2rem; padding:1.5rem;">
+            <h3>Founder Updates</h3>
+
+            {% if updates %}
+                {% for u in updates %}
+                <div style="margin-top:1rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <strong>{{ u.company_name }}</strong>
+                    <div class="text-secondary" style="font-size:0.75rem;">
+                        {{ u.month_label }}
+                    </div>
+                    <p style="margin-top:0.5rem;">{{ u.update_text }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No founder updates yet.</div>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<script>
+    const allocationLabels = {{ chart_labels|safe }} || [];
+    const allocationData = {{ chart_data|safe }} || [];
+
+    if (allocationLabels.length) {
+        new Chart(document.getElementById('allocationChart'), {
+            type: 'doughnut',
+            data: {
+                labels: allocationLabels,
+                datasets: [{ data: allocationData }]
+            },
+            options: { cutout: '70%', plugins:{legend:{position:'bottom'}} }
+        });
+    }
+
+    const trendLabels = {{ trend_labels|safe }} || [];
+    const trendValues = {{ trend_values|safe }} || [];
+
+    if (trendLabels.length) {
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Portfolio MRR',
+                    data: trendValues,
+                    borderColor: '#34d399',
+                    tension: 0.3
+                }]
+            },
+            options: { responsive:true }
+        });
+    }
+</script>
+
+</body>
+</html>

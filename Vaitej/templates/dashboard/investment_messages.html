@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Investment Messages | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <!-- HEADER -->
+        <header class="page-header">
+            <div>
+                <h1>Investment Messages</h1>
+                <p>Communicate with founders across your deal rooms.</p>
+            </div>
+        </header>
+
+        <!-- SEARCH -->
+        <div style="margin-bottom:1rem;">
+            <input type="text"
+                   placeholder="Search messages..."
+                   onkeyup="searchMessages(this.value)"
+                   style="width:100%; padding:10px; border-radius:8px;">
+        </div>
+
+        <!-- GRID -->
+        <div class="dashboard-grid" style="grid-template-columns: 1.3fr 2.7fr;">
+
+            <!-- INBOX -->
+            <div class="glass" style="padding:1rem; height:70vh; overflow-y:auto;">
+                <h3 style="margin-bottom:1rem;">Inbox</h3>
+
+                {% if conversations %}
+                    {% for c in conversations %}
+                        <div onclick="openConversation({{ c.convo_id }})"
+                             style="padding:10px; border-radius:8px; margin-bottom:8px;
+                                    cursor:pointer;
+                                    background:{% if c.unread_count > 0 %}rgba(99,102,241,0.15){% else %}rgba(255,255,255,0.05){% endif %};">
+
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>{{ c.company_name or c.fund_name }}</strong>
+                                {% if c.unread_count > 0 %}
+                                    <span class="badge badge-success">{{ c.unread_count }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="text-secondary" style="font-size:0.8rem;">
+                                {{ c.last_message or "No messages yet" }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">No conversations yet.</div>
+                {% endif %}
+            </div>
+
+            <!-- CHAT PREVIEW -->
+            <div id="chatPanel" class="glass"
+                 style="padding:1.5rem; height:70vh; overflow-y:auto;">
+
+                <div class="empty-state">
+                    Select a conversation to preview messages
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+</div>
+
+<script>
+const CURRENT_USER_ID = {{ session.user_id }};
+
+function openConversation(convoId) {
+    fetch(`/api/messages/${convoId}`)
+        .then(res => res.json())
+        .then(data => {
+            const panel = document.getElementById("chatPanel");
+            panel.innerHTML = "";
+
+            if (!data.messages.length) {
+                panel.innerHTML = "<div class='empty-state'>No messages yet.</div>";
+                return;
+            }
+
+            data.messages.forEach(m => {
+                panel.innerHTML += `
+                    <div class="chat-message ${m.sender_id === CURRENT_USER_ID ? 'me' : ''}">
+                        <div class="sender">${m.full_name}</div>
+                        <div class="bubble">${m.message || ""}</div>
+                        ${m.attachment_url ? `<a href="/${m.attachment_url}" target="_blank">📎 Attachment</a>` : ""}
+                    </div>
+                `;
+            });
+
+            panel.innerHTML += `
+                <div style="margin-top:1rem;">
+                    <a href="/messages/${convoId}" class="btn-outline btn-sm">
+                        Open Full Chat
+                    </a>
+                    <button onclick="getSummary(${convoId})"
+                            class="btn-outline btn-sm"
+                            style="margin-left:8px;">
+                        AI Summary
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function getSummary(convoId) {
+    fetch(`/messages/summary/${convoId}`)
+        .then(res => res.json())
+        .then(data => {
+            alert(data.summary);
+        });
+}
+
+function searchMessages(q) {
+    if (!q) return;
+    fetch(`/messages/search?q=${encodeURIComponent(q)}`)
+        .then(res => res.json())
+        .then(data => console.log(data.results));
+}
+</script>
+
+</body>
+</html>

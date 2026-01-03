@@ -1,0 +1,83 @@
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/vaitej-logo.png') }}"
+             class="sidebar-logo"
+             alt="Vaitej Ventures"
+             onerror="this.style.display='none'"> 
+        <span class="sidebar-brand">Vaitej Ventures</span>
+
+        <button class="collapse-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar">
+            <i data-lucide="chevrons-left"></i>
+        </button>
+    </div>
+
+    <div class="role-badge">
+        Investor Workspace
+    </div>
+
+    <nav class="sidebar-nav">
+
+        <a href="{{ url_for('investor_home') }}"
+           class="sidebar-link {% if request.path == '/investor/home' %}active{% endif %}"
+           data-tooltip="Deal Feed">
+            <i data-lucide="layout-grid"></i>
+            <span>Deal Feed</span>
+        </a>
+
+<a href="{{ url_for('investor_deals') }}"
+   class="sidebar-link {% if request.path.startswith('/investor/deal') or request.path.startswith('/investor/deals') %}active{% endif %}"
+   data-tooltip="Deal Rooms">
+
+            <i data-lucide="folder-lock"></i>
+            <span>Deal Rooms</span>
+        </a>
+
+<a href="{{ url_for('investor_portfolio') }}"
+   class="sidebar-link {% if '/investor/portfolio' in request.path %}active{% endif %}"
+   data-tooltip="Portfolio">
+    <i data-lucide="pie-chart"></i>
+    <span>Portfolio</span>
+</a>
+
+        <a href="{{ url_for('investor_messages') }}"
+           class="sidebar-link {% if '/investor/messages' in request.path %}active{% endif %}"
+           data-tooltip="Messages">
+            <i data-lucide="message-square"></i>
+            <span>Messages</span>
+        </a>
+
+        <a href="{{ url_for('investor_settings') }}"
+           class="sidebar-link {% if '/investor/settings' in request.path %}active{% endif %}"
+           data-tooltip="Settings">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+        </a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn" data-tooltip="Sign Out">
+            <i data-lucide="log-out"></i>
+            <span>Log Out</span>
+        </a>
+    </div>
+
+</aside>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+             document.querySelector('.collapse-btn').innerHTML = '<i data-lucide="chevrons-right"></i>';
+        } else {
+             document.querySelector('.collapse-btn').innerHTML = '<i data-lucide="chevrons-left"></i>';
+        }
+        lucide.createIcons();
+    }
+</script>

@@ -14,7 +14,7 @@
         <div class="page-header">
             <div>
                 <h1>Pitch Hub</h1>
-                <p>AI-driven analysis and scoring for your pitch deck.</p>
+                <p>AI-driven analysis, simulation, and investor access.</p>
             </div>
         </div>
 
@@ -24,34 +24,59 @@
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                 
                 <div class="glass" style="padding: 1.5rem;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Executive Summary</h3>
-                    <p style="color: var(--text-secondary);">
-                        {{ analysis.summary if analysis else deck.feedback_summary or "Processing analysis..." }}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700;">Deck Analysis</h3>
+                        <span class="badge badge-neutral">{{ deck.created_at.strftime('%d %b') }}</span>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        {{ analysis.summary if analysis else deck.feedback_summary }}
                     </p>
-                </div>
 
-                <div class="glass" style="padding: 1.5rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <div>
-                            <h4 style="color: var(--success); font-weight: 700; margin-bottom: 1rem;">Strengths</h4>
+                            <h4 style="color: var(--success); font-weight: 700; font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase;">Strengths</h4>
                             <ul class="pro-con-list">
-                                {% for s in analysis.strengths if analysis and analysis.strengths %}
+                                {% for s in analysis.strengths %}
                                     <li><i data-lucide="check-circle" style="color:var(--success); width:16px;"></i> {{ s }}</li>
-                                {% else %}
-                                    <li>Analyzing...</li>
                                 {% endfor %}
                             </ul>
                         </div>
                         <div>
-                            <h4 style="color: var(--danger); font-weight: 700; margin-bottom: 1rem;">Risks</h4>
+                            <h4 style="color: var(--danger); font-weight: 700; font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase;">Weaknesses</h4>
                             <ul class="pro-con-list">
-                                {% for w in analysis.weaknesses if analysis and analysis.weaknesses %}
+                                {% for w in analysis.weaknesses %}
                                     <li><i data-lucide="alert-triangle" style="color:var(--danger); width:16px;"></i> {{ w }}</li>
-                                {% else %}
-                                    <li>Analyzing...</li>
                                 {% endfor %}
                             </ul>
                         </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    
+                    <div class="glass" style="padding: 1.5rem; border: 1px solid var(--accent-primary); background: rgba(99,102,241,0.05);">
+                        <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 700;">STEP 1: PREPARE</h4>
+                        <h3 style="margin-bottom: 0.5rem;">VC Simulator</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Practice answering tough questions generated from your deck's weak points.
+                        </p>
+                        <a href="{{ url_for('start_qa_session') }}" class="btn-primary" style="width: 100%;">
+                            <i data-lucide="message-square" style="width: 18px; margin-right: 8px;"></i> Start Simulation
+                        </a>
+                    </div>
+
+                    <div class="glass" style="padding: 1.5rem;">
+                        <h4 style="color: var(--warning); margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 700;">STEP 2: ANALYZE</h4>
+                        <h3 style="margin-bottom: 0.5rem;">Deep Report</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Generate a full investment memo combining your deck and simulation performance.
+                        </p>
+                        {% if report %}
+                            <a href="{{ url_for('view_report', deck_id=deck.id) }}" class="btn-outline" style="width: 100%;">View Report</a>
+                        {% else %}
+                            <a href="{{ url_for('generate_report', deck_id=deck.id) }}" class="btn-outline" style="width: 100%;">Generate Report</a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -59,7 +84,7 @@
 
             <div class="glass" style="padding: 2rem; text-align: center; height: fit-content;">
                 <h4 style="text-transform: uppercase; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 0.05em; margin-bottom: 1.5rem;">
-                    Investability Score
+                    Readiness Score
                 </h4>
 
                 <div class="score-circle-container" 
@@ -68,21 +93,35 @@
                     <div class="score-value">{{ deck.deck_score }}</div>
                 </div>
 
-                {% if analysis and analysis.verdict %}
                 <div style="margin-top: 1.5rem;">
-                    <span class="badge 
-                        {% if analysis.verdict == 'Invest' %}badge-success{% elif analysis.verdict == 'Pass' %}badge-danger{% else %}badge-warning{% endif %}">
-                        Verdict: {{ analysis.verdict }}
-                    </span>
+                    <span class="badge badge-warning">Verdict: {{ analysis.verdict }}</span>
                 </div>
-                {% endif %}
 
                 <div style="margin-top: 2rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
-                    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 1rem;">
-                        Uploaded: {{ deck.created_at.strftime('%d %b %Y') }}
-                    </p>
-                    <a href="{{ deck.file_url }}" target="_blank" class="btn-outline" style="width: 100%;">
-                        <i data-lucide="file-text" style="width: 16px; margin-right: 8px;"></i> View PDF
+                    
+                    {% if deck.is_published %}
+                        <div style="background: var(--success-bg); color: var(--success); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <i data-lucide="check" style="width: 16px; display: inline-block;"></i> 
+                            <strong>Published</strong>
+                            <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 4px;">To High-Match Investors</div>
+                        </div>
+                    {% else %}
+                        <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 1rem;">
+                            Score > 70 required to publish to Deal Flow.
+                        </p>
+                        {% if deck.deck_score >= 70 %}
+                            <a href="{{ url_for('publish_deck', deck_id=deck.id) }}" class="btn-primary" style="width: 100%; background: var(--success);">
+                                <i data-lucide="rocket" style="width: 16px; margin-right: 8px;"></i> Publish Deck
+                            </a>
+                        {% else %}
+                            <button disabled class="btn-outline" style="width: 100%; opacity: 0.5; cursor: not-allowed;">
+                                Improve Score to Publish
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ deck.file_url }}" target="_blank" class="btn-outline" style="width: 100%; margin-top: 1rem;">
+                        View PDF File
                     </a>
                 </div>
             </div>

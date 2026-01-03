@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Conversation | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <header class="page-header">
+            <h1>Conversation</h1>
+        </header>
+
+        <!-- CHAT -->
+        <div class="glass chat-box" style="padding:1.5rem; height:60vh; overflow-y:auto;">
+
+            {% if messages %}
+                {% for m in messages %}
+                    <div class="chat-message {% if m.sender_id == user_id %}me{% endif %}">
+                        <div class="sender">{{ m.full_name }}</div>
+                        <div class="bubble">{{ m.message }}</div>
+
+                        {% if m.attachment_url %}
+                            <a href="/{{ m.attachment_url }}" target="_blank">📎 Attachment</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No messages yet.</div>
+            {% endif %}
+
+        </div>
+
+        <!-- INPUT -->
+        <form method="post"
+              action="{{ url_for('send_message') }}"
+              enctype="multipart/form-data"
+              class="chat-input"
+              style="margin-top:1rem;">
+
+            <input type="hidden" name="conversation_id" value="{{ conversation_id }}">
+
+            <input type="text"
+                   name="message"
+                   placeholder="Type your message…"
+                   style="flex:1; padding:10px; border-radius:6px;">
+
+            <input type="file" name="attachment">
+
+            <button type="submit" class="btn-primary">
+                Send
+            </button>
+        </form>
+
+        <!-- AI SUMMARY -->
+        <div style="margin-top:1rem;">
+            <button onclick="getSummary({{ conversation_id }})"
+                    class="btn-outline btn-sm">
+                AI Conversation Summary
+            </button>
+        </div>
+
+    </main>
+</div>
+
+<script>
+function getSummary(convoId) {
+    fetch(`/messages/summary/${convoId}`)
+        .then(res => res.json())
+        .then(data => {
+            alert(data.summary);
+        });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Investor Settings | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <style>
+        /* ---------- Layout ---------- */
+        .settings-wrapper {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .settings-card {
+            padding: 2.25rem;
+            border-radius: 16px;
+            background: linear-gradient(
+                180deg,
+                rgba(255,255,255,0.06),
+                rgba(255,255,255,0.03)
+            );
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .settings-card h3 {
+            margin: 0;
+            font-size: 1.15rem;
+        }
+
+        .settings-card p.helper {
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        /* ---------- Profile Completion ---------- */
+        .completion-card {
+            display: grid;
+            grid-template-columns: 1.3fr 2.7fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .completion-metric {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #6366f1, #22c55e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .completion-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .completion-bar > div {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #22c55e);
+            border-radius: 999px;
+        }
+
+        /* ---------- Forms ---------- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.4rem;
+            margin-top: 1.6rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: .02em;
+            color: var(--text-secondary);
+        }
+
+        /* ---------- Toggles ---------- */
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .toggle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .toggle-item span {
+            font-size: 0.85rem;
+        }
+
+        /* ---------- Status ---------- */
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.2rem;
+        }
+
+        .status-pill {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .verified { background: rgba(34,197,94,.18); color:#22c55e; }
+        .pending { background: rgba(251,191,36,.18); color:#fbbf24; }
+        .unverified { background: rgba(148,163,184,.18); color:#94a3b8; }
+
+        /* ---------- Footer ---------- */
+        .settings-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+        <header class="page-header">
+            <h1>Investor Settings</h1>
+            <p>Shape how founders see you and how deals reach you.</p>
+        </header>
+
+        <form method="post">
+            <div class="settings-wrapper">
+
+                <!-- Profile Completion -->
+                <div class="settings-card completion-card">
+                    <div>
+                        <h3>Profile Strength</h3>
+                        <p class="helper">Higher scores improve deal quality</p>
+                        <div class="completion-metric">
+                            {{ investor.profile_completion or 0 }}%
+                        </div>
+                    </div>
+                    <div>
+                        <div class="completion-bar">
+                            <div style="width: {{ investor.profile_completion or 0 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Identity -->
+                <div class="settings-card">
+                    <h3>Identity</h3>
+                    <p class="helper">Basic personal information</p>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" value="{{ investor.full_name }}" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" value="{{ investor.email }}" disabled>
+                        </div>
+
+                        <div class="form-group full">
+                            <label>Title</label>
+                            <input type="text" name="title" value="{{ investor.title or '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fund -->
+                <div class="settings-card">
+                    <h3>Fund & Investment Preferences</h3>
+                    <p class="helper">Used for deal matching & ranking</p>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Fund Name</label>
+                            <input type="text" name="fund_name" value="{{ investor.fund_name or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fund Size (AUM)</label>
+                            <input type="number" name="fund_size" value="{{ investor.fund_size or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Check Size (Min)</label>
+                            <input type="number" name="check_min" value="{{ investor.typical_check_min or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Check Size (Max)</label>
+                            <input type="number" name="check_max" value="{{ investor.typical_check_max or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Stages</label>
+                            <input type="text" name="investment_stage" value="{{ investor.investment_stage or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sectors</label>
+                            <input type="text" name="sector_focus" value="{{ investor.sector_focus or '' }}">
+                        </div>
+
+                        <div class="form-group full">
+                            <label>Geography</label>
+                            <input type="text" name="geography_focus" value="{{ investor.geography_focus or '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Privacy -->
+                <div class="settings-card">
+                    <h3>Privacy Controls</h3>
+                    <p class="helper">Choose what founders can view</p>
+
+                    <div class="toggle-grid">
+                        <div class="toggle-item">
+                            <span>Show Fund Size</span>
+                            <input type="checkbox" name="show_fund_size">
+                        </div>
+                        <div class="toggle-item">
+                            <span>Show Check Size</span>
+                            <input type="checkbox" name="show_check_size">
+                        </div>
+                        <div class="toggle-item">
+                            <span>Show Thesis</span>
+                            <input type="checkbox" name="show_thesis">
+                        </div>
+                        <div class="toggle-item">
+                            <span>Show Portfolio</span>
+                            <input type="checkbox" name="show_portfolio">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="settings-card">
+                    <h3>Status & Verification</h3>
+
+                    <div class="form-group">
+                        <label>Activity Status</label>
+                        <select name="activity_status">
+                            <option value="active" {% if investor.activity_status == 'active' %}selected{% endif %}>
+                                Active – Receive deals
+                            </option>
+                            <option value="dormant" {% if investor.activity_status == 'dormant' %}selected{% endif %}>
+                                Dormant – Pause deals
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="status-row">
+                        <strong>Verification</strong>
+                        {% if investor.verification_status == 'verified' %}
+                            <span class="status-pill verified">Verified</span>
+                        {% elif investor.verification_status == 'pending' %}
+                            <span class="status-pill pending">Pending</span>
+                        {% else %}
+                            <span class="status-pill unverified">Unverified</span>
+                        {% endif %}
+                    </div>
+
+                    {% if investor.verification_status == 'unverified' %}
+                        <button formaction="{{ url_for('request_investor_verification') }}"
+                                formmethod="post"
+                                class="btn-outline"
+                                style="margin-top:1rem;">
+                            Request Verification
+                        </button>
+                    {% endif %}
+                </div>
+
+                <!-- Footer -->
+                <div class="settings-footer">
+                    <span class="text-secondary">
+                        Changes impact ranking & deal visibility immediately.
+                    </span>
+                    <button type="submit" class="btn-primary">
+                        Save Changes
+                    </button>
+                </div>
+
+            </div>
+        </form>
+
+    </main>
+</div>
+
+</body>
+</html>

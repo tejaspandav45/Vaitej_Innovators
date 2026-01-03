@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Deal Rooms | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <!-- ================= HEADER ================= -->
+        <header class="page-header">
+            <div>
+                <h1>Deal Rooms</h1>
+                <p class="text-secondary">
+                    Active startup evaluations and diligence tracking
+                </p>
+            </div>
+        </header>
+
+        <!-- ================= TABS ================= -->
+        <div class="tab-bar" style="margin-bottom:1.5rem;">
+            {% for t,label in [
+                ('interested','Active Deals'),
+                ('saved','Watchlist'),
+                ('declined','Passed')
+            ] %}
+            <a href="{{ url_for('investor_deals', tab=t) }}"
+               class="tab {% if active_tab == t %}active{% endif %}">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- ================= BULK ACTION BAR ================= -->
+        <form method="post" action="{{ url_for('bulk_update_deals') }}">
+
+            <div class="bulk-bar glass" style="padding:0.75rem; margin-bottom:1rem; display:flex; gap:10px;">
+                <button type="submit" name="action" value="declined"
+                        class="btn-outline btn-sm">
+                    Pass Selected
+                </button>
+
+                <button type="submit" name="action" value="archived"
+                        class="btn-outline btn-sm">
+                    Archive Selected
+                </button>
+            </div>
+
+            <!-- ================= DEAL LIST ================= -->
+            <section class="glass" style="padding:1.5rem;">
+
+                {% if deals %}
+
+                    {% for d in deals %}
+                    <div class="match-card" style="margin-bottom:1.4rem;">
+
+                        <!-- Row 1 -->
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+
+                            <div style="display:flex; gap:10px; align-items:flex-start;">
+                                <input type="checkbox"
+                                       name="deal_ids"
+                                       value="{{ d.founder_id }}"
+                                       style="margin-top:6px;">
+
+                                <div>
+                                    <h4 style="margin-bottom:4px;">
+                                        {{ d.company_name }}
+                                    </h4>
+                                    <div class="text-secondary" style="font-size:0.85rem;">
+                                        {{ d.sector }} • {{ d.stage }} • {{ d.location }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="text-align:right;">
+                                <span class="badge badge-success">
+                                    {{ d.match_score }}% Fit
+                                </span>
+                                <div class="text-secondary" style="font-size:0.8rem; margin-top:4px;">
+                                    Pitch: {{ d.pitch_score or "—" }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2 : Signals -->
+                        <div style="margin-top:0.75rem; display:flex; gap:16px; align-items:center;">
+
+                            <!-- DD Progress -->
+                            <div class="dd-progress">
+                                <div class="dd-bar">
+                                    <div class="dd-fill" style="width: {{ d.dd_progress }}%"></div>
+                                </div>
+                                <span>{{ d.dd_progress }}% DD</span>
+                            </div>
+
+                            <!-- Status -->
+                            {% if d.status == 'interested' %}
+                                <span class="signal info">In Evaluation</span>
+                            {% elif d.status == 'saved' %}
+                                <span class="signal neutral">Watchlist</span>
+                            {% elif d.status == 'declined' %}
+                                <span class="signal danger">Passed</span>
+                            {% endif %}
+
+                            <!-- Last Activity -->
+                            <span class="text-secondary" style="font-size:0.75rem;">
+                                Last activity: {{ d.last_seen }}
+                            </span>
+                        </div>
+
+                        <!-- Row 3 : Action -->
+                        <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
+                            <a href="{{ url_for('investor_deal_view', founder_id=d.founder_id) }}"
+                               class="btn-primary btn-sm">
+                                Open Deal Room
+                            </a>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <div class="empty-state">
+                        No deals found in this category.
+                        <div class="text-secondary">
+                            Save or express interest in startups to populate Deal Rooms.
+                        </div>
+                    </div>
+                {% endif %}
+
+            </section>
+        </form>
+
+    </main>
+</div>
+
+</body>
+</html>

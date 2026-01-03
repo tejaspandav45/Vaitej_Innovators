@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>VC Simulator | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .chat-container {
+            height: 65vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .msg-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+        .msg-row.founder { align-self: flex-end; align-items: flex-end; }
+        .msg-row.investor { align-self: flex-start; align-items: flex-start; }
+        .msg-bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        .msg-row.founder .msg-bubble {
+            background: var(--accent-primary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .msg-row.investor .msg-bubble {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            border-bottom-left-radius: 2px;
+        }
+        .msg-label {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .typing-indicator {
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/sidebar.html" %}
+
+    <main class="dashboard-content">
+        <div class="page-header">
+            <div>
+                <h1>VC Simulator</h1>
+                <p>Live interrogation based on your deck's specific weak points.</p>
+            </div>
+            <a href="{{ url_for('founder_pitch') }}" class="btn-outline">Exit Session</a>
+        </div>
+
+        <div class="chat-container glass">
+            
+            <div id="chat-box" class="chat-messages">
+                <div style="align-self: center; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.8rem; color: var(--text-tertiary);">
+                    Session Started
+                </div>
+
+                {% if transcript %}
+                    {% for msg in transcript %}
+                        <div class="msg-row {{ msg.role }}">
+                            <div class="msg-label">{{ 'You' if msg.role == 'founder' else 'AI Investor' }}</div>
+                            <div class="msg-bubble">{{ msg.text }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div style="padding: 1.5rem; background: rgba(15, 23, 42, 0.8); border-top: 1px solid var(--border-subtle);">
+                <form id="chat-form" style="display: flex; gap: 1rem;">
+                    <input type="text" id="user-input" placeholder="Type your answer here..." autocomplete="off" style="margin-bottom: 0;">
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 0 1.5rem;">
+                        <i data-lucide="send" style="width: 18px;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+    const chatBox = document.getElementById('chat-box');
+    const sessionId = {{ qa_session.id }};
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function appendMessage(role, text) {
+        const row = document.createElement('div');
+        row.className = `msg-row ${role}`;
+        
+        const label = document.createElement('div');
+        label.className = 'msg-label';
+        label.innerText = role === 'founder' ? 'You' : 'AI Investor';
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.innerText = text;
+        
+        row.appendChild(label);
+        row.appendChild(bubble);
+        chatBox.appendChild(row);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTyping() {
+        const div = document.createElement('div');
+        div.id = 'typing-indicator';
+        div.className = 'typing-indicator';
+        div.innerText = 'AI is analyzing your answer...';
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('typing-indicator');
+        if(el) el.remove();
+    }
+
+    async function sendMessage(text = "") {
+        if(text) appendMessage('founder', text);
+        showTyping();
+
+        try {
+            const res = await fetch('/api/qa/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ session_id: sessionId, message: text })
+            });
+            const data = await res.json();
+            
+            removeTyping();
+            
+            if(data.reply) appendMessage('investor', data.reply);
+            
+            if(data.finished) {
+                setTimeout(() => {
+                    alert("Session Complete! Generating report...");
+                    window.location.href = "{{ url_for('founder_pitch') }}";
+                }, 1000);
+            }
+        } catch (err) {
+            console.error(err);
+            removeTyping();
+        }
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if(text) {
+            sendMessage(text);
+            input.value = '';
+        }
+    });
+</script>
+</body>
+</html>

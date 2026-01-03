@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Investor Dashboard | Vaitej Ventures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <!-- ================= FLASH / TOAST ================= -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, msg in messages %}
+            <div class="toast">{{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <!-- ================= HEADER ================= -->
+        <header class="page-header">
+            <div>
+                <h1>Investor Dashboard</h1>
+                <p class="text-secondary">
+                    High-signal opportunities aligned with your thesis
+                </p>
+            </div>
+        </header>
+
+        <!-- ================= KPI STRIP ================= -->
+        <section class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 2rem;">
+
+            <div class="glass metric-card">
+                <h4>High-Conviction</h4>
+                <div class="metric-value">{{ kpis.high_fit }}</div>
+                <div class="metric-hint">Strong thesis + pitch</div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>New Opportunities</h4>
+                <div class="metric-value">{{ kpis.new_deals }}</div>
+                <div class="metric-hint">Not yet actioned</div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>Founder Momentum</h4>
+                <div class="metric-value">{{ kpis.updated_deals }}</div>
+                <div class="metric-hint">Recent updates</div>
+            </div>
+
+            <div class="glass metric-card">
+                <h4>Action Required</h4>
+                <div class="metric-value">{{ kpis.open_conversations }}</div>
+                <div class="metric-hint">Unread messages</div>
+            </div>
+
+        </section>
+
+        <!-- ================= FILTERS ================= -->
+        <form method="get" class="glass"
+              style="display:flex; gap:12px; padding:0.75rem; margin-bottom:1.75rem; border-radius:12px;">
+
+            <select name="stage" onchange="this.form.submit()" class="filter-select">
+                <option value="">All Stages</option>
+                {% for s in ['idea','pre-seed','seed','series-a','series-b+'] %}
+                <option value="{{ s }}" {% if request.args.get('stage') == s %}selected{% endif %}>
+                    {{ s|title }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select name="sector" onchange="this.form.submit()" class="filter-select">
+                <option value="">All Sectors</option>
+                {% for sec in ['SaaS','Fintech','AI','Health','Climate'] %}
+                <option value="{{ sec }}" {% if request.args.get('sector') == sec %}selected{% endif %}>
+                    {{ sec }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select name="geo" onchange="this.form.submit()" class="filter-select">
+                <option value="">All Regions</option>
+                {% for g in ['India','US','Europe','SEA'] %}
+                <option value="{{ g }}" {% if request.args.get('geo') == g %}selected{% endif %}>
+                    {{ g }}
+                </option>
+                {% endfor %}
+            </select>
+
+            {% if request.args %}
+            <a href="{{ url_for('investor_home') }}" class="btn-outline btn-sm">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+
+        <!-- ================= MAIN GRID ================= -->
+        <div class="dashboard-grid" style="grid-template-columns: 2.3fr 1fr;">
+
+            <!-- ================= DEAL FEED ================= -->
+            <section class="glass" style="padding: 1.5rem;">
+                <h3 style="margin-bottom: 1.25rem;">Priority Deals</h3>
+
+                {% if deals %}
+                    {% for deal in deals %}
+                    <div class="match-card" style="margin-bottom: 1.25rem;">
+
+                        <!-- Header -->
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <div class="logo-box">
+                                    {% if deal.logo_url %}
+                                        <img src="{{ deal.logo_url }}" alt="{{ deal.company_name }}">
+                                    {% else %}
+                                        <span>🚀</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4>{{ deal.company_name }}</h4>
+                                    <div class="text-secondary" style="font-size:0.85rem;">
+                                        {{ deal.sector }} • {{ deal.stage }} • {{ deal.location }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span class="badge badge-success">
+                                {{ deal.match_score }}% Fit
+                            </span>
+                        </div>
+
+                        <!-- Metrics -->
+                        <div class="metrics-mini" style="margin-top: 1rem;">
+                            <div>
+                                <span class="label">MRR</span>
+                                <strong>${{ deal.mrr }}</strong>
+                            </div>
+                            <div>
+                                <span class="label">Growth</span>
+                                <strong>{{ deal.growth }}%</strong>
+                            </div>
+                            <div>
+                                <span class="label">Pitch</span>
+                                <strong>{{ deal.pitch_score }}</strong>
+                            </div>
+                        </div>
+
+                        <!-- Match Reason -->
+                        <div class="text-secondary"
+                             style="margin-top:0.75rem; font-style:italic; font-size:0.85rem;">
+                            “{{ deal.match_reasons }}”
+                        </div>
+
+                        <!-- Actions -->
+                        <div style="display:flex; gap:10px; margin-top:1rem;">
+                            <a href="{{ url_for('investor_deal_view', founder_id=deal.founder_id) }}"
+                               class="btn-primary btn-sm">
+                                View Deal
+                            </a>
+
+                            <a href="{{ url_for('update_investor_match', founder_id=deal.founder_id, action='saved') }}"
+                               class="btn-outline btn-sm"
+                               {% if deal.status == 'saved' %}style="background:var(--accent-primary);color:white;"{% endif %}>
+                                Save
+                            </a>
+
+                            <a href="{{ url_for('update_investor_match', founder_id=deal.founder_id, action='declined') }}"
+                               class="btn-outline btn-sm text-danger"
+                               onclick="return confirm('Remove this deal from your feed?');">
+                                Pass
+                            </a>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        No high-signal deals right now.
+                        <div class="text-secondary">
+                            Filters may be too strict or new founders are onboarding.
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+
+            <!-- ================= ALERTS ================= -->
+            <aside class="glass" style="padding: 1.5rem;">
+                <h4>Momentum Alerts</h4>
+                <ul class="alert-list">
+                    <li>🚀 High-fit startups available</li>
+                    <li>⏰ Conversations awaiting replies</li>
+                    <li>🔥 Founders updating traction</li>
+                </ul>
+                <div class="text-secondary" style="font-size:0.8rem; margin-top:1rem;">
+                    Alerts adapt to your activity
+                </div>
+            </aside>
+
+        </div>
+
+    </main>
+</div>
+
+</body>
+</html>

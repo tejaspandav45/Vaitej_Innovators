@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ founder.company_name }} | Deal Room</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="dashboard-layout">
+    {% include "dashboard/investor_sidebar.html" %}
+
+    <main class="dashboard-content">
+
+        <!-- ================= HEADER ================= -->
+        <header class="page-header">
+            <div>
+                <h1>{{ founder.company_name }}</h1>
+                <p class="text-secondary">
+                    {{ founder.sector }} • {{ founder.stage }} • {{ founder.location }}
+                </p>
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('update_investor_match', founder_id=founder.id, action='saved') }}"
+                   class="btn-outline btn-sm">Save</a>
+
+                <a href="{{ url_for('update_investor_match', founder_id=founder.id, action='interested') }}"
+                   class="btn-primary btn-sm">Connect</a>
+
+                <a href="{{ url_for('update_investor_match', founder_id=founder.id, action='declined') }}"
+                   class="btn-outline btn-sm text-danger">Pass</a>
+            </div>
+        </header>
+
+        <!-- ================= AI DEAL MEMO ================= -->
+        <section class="glass" style="padding:1.5rem; margin-bottom:2rem;">
+            <h3>AI Deal Memo</h3>
+
+            {% if founder.analysis_json %}
+                {% set analysis = founder.analysis_json | fromjson %}
+                <p><strong>Summary:</strong> {{ analysis.summary }}</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h4>Strengths</h4>
+                        <ul>
+                            {% for s in analysis.strengths %}
+                            <li>✅ {{ s }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Risks</h4>
+                        <ul>
+                            {% for w in analysis.weaknesses %}
+                            <li>⚠️ {{ w }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <p><strong>Verdict:</strong> {{ analysis.verdict }}</p>
+            {% else %}
+                <p class="text-secondary">No AI memo available yet.</p>
+            {% endif %}
+        </section>
+
+        <!-- ================= PITCH DECK ================= -->
+        <section class="glass" style="padding:1.5rem; margin-bottom:2rem;">
+            <h3>Pitch Deck</h3>
+            {% if founder.deck_url %}
+                <p>Pitch Score: <strong>{{ founder.deck_score }}/100</strong></p>
+                <a href="{{ founder.deck_url }}" target="_blank" class="btn-primary btn-sm">
+                    View Deck
+                </a>
+            {% else %}
+                <p class="text-secondary">No deck uploaded.</p>
+            {% endif %}
+        </section>
+
+        <!-- ================= TRACTION ================= -->
+        <section class="glass" style="padding:1.5rem; margin-bottom:2rem;">
+            <h3>Traction</h3>
+            <canvas id="tractionChart"></canvas>
+        </section>
+
+        <!-- ================= DUE DILIGENCE ================= -->
+        <section class="glass" style="padding:1.5rem; margin-bottom:2rem;">
+            <h3>Due Diligence Checklist</h3>
+
+            <form id="ddForm">
+                {% for key in [
+                    'team', 'market', 'product', 'traction',
+                    'unit_economics', 'legal', 'moat'
+                ] %}
+                <label style="display:block; margin-bottom:6px;">
+                    <input type="checkbox"
+                           onchange="saveDD()"
+                           {% if checklist.get(key) %}checked{% endif %}
+                           data-key="{{ key }}">
+                    {{ key.replace('_',' ') | title }}
+                </label>
+                {% endfor %}
+            </form>
+        </section>
+
+        <!-- ================= PRIVATE NOTES ================= -->
+        <section class="glass" style="padding:1.5rem;">
+            <h3>Private Notes</h3>
+            <textarea id="ddNotes"
+                      onblur="saveDD()"
+                      placeholder="Your private investment notes..."
+                      style="width:100%; min-height:120px;">{{ dd_data.private_notes if dd_data }}</textarea>
+        </section>
+
+    </main>
+</div>
+
+<script>
+/* --------- Traction Chart ---------- */
+const ctx = document.getElementById('tractionChart');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [
+            {
+                label: 'Revenue',
+                data: {{ chart_rev|safe }},
+                borderWidth: 2
+            },
+            {
+                label: 'Expenses',
+                data: {{ chart_exp|safe }},
+                borderWidth: 2
+            }
+        ]
+    }
+});
+
+/* --------- Save DD Data ---------- */
+function saveDD() {
+    const checklist = {};
+    document.querySelectorAll('#ddForm input').forEach(el => {
+        checklist[el.dataset.key] = el.checked;
+    });
+
+    fetch('/api/investor/save_dd', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            founder_id: {{ founder.id }},
+            notes: document.getElementById('ddNotes').value,
+            checklist: checklist
+        })
+    });
+}
+</script>
+
+</body>
+</html>

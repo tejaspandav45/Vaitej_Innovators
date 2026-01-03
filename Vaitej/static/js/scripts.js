@@ -285,3 +285,61 @@ function initFileUploaders() {
         });
     }
 }
+
+/* ====================================================================
+   UI INTERACTION & MOBILE MENU
+   ==================================================================== */
+
+function toggleDesktopSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.querySelector('.desktop-only');
+    
+    sidebar.classList.toggle('collapsed');
+    
+    if (sidebar.classList.contains('collapsed')) {
+        btn.innerHTML = '<i data-lucide="chevrons-right"></i>';
+    } else {
+        btn.innerHTML = '<i data-lucide="chevrons-left"></i>';
+    }
+    lucide.createIcons();
+}
+
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+}
+
+/* ====================================================================
+   BUTTON LOADING STATES
+   ==================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Attach loader to all forms on submit
+    const forms = document.querySelectorAll('form');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            // Find the submit button
+            const btn = this.querySelector('button[type="submit"], .btn-primary');
+            if (btn) {
+                // Save original width to prevent shrinking
+                const width = btn.offsetWidth;
+                btn.style.width = `${width}px`;
+                btn.classList.add('btn-loading');
+            }
+        });
+    });
+
+    // 2. Close mobile menu when clicking a link
+    if (window.innerWidth < 1024) {
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', () => {
+                toggleMobileMenu();
+            });
+        });
+    }
+});
+
+// ... Keep your existing initChatSystem and initTractionCharts functions below ...
