@@ -35,6 +35,7 @@ app.config.from_object(Config)
 # Session + flash security
 app.secret_key = app.config.get("SECRET_KEY", "dev-secret-key")
 app.jinja_env.filters["loads"] = json.loads
+app.jinja_env.filters["fromjson"] = json.loads  # <--- ADD THIS LINE
 # -------------------------------------------------
 # FILE UPLOAD CONFIG
 # -------------------------------------------------
@@ -868,13 +869,29 @@ def analyze_traction():
 # -------------------------------------------------
 # 7. MESSAGES & SETTINGS
 # -------------------------------------------------
+# In app.py
+
 @app.route("/founder/messages")
-@app.route("/founder/messages/<int:conversation_id>")
+@app.route("/founder/messages/<int:conversation_id>", methods=["GET", "POST"])  # 1. Allow POST
 def founder_messages(conversation_id=None):
     if session.get("role") != "founder": return redirect(url_for("login"))
     user_id = session.get("user_id")
+
+    # 2. Handle Message Sending (POST)
+    if request.method == "POST" and conversation_id:
+        message_text = request.form.get("message")
+        if message_text:
+            db.session.execute(text("""
+                INSERT INTO messages (conversation_id, sender_id, message)
+                VALUES (:cid, :uid, :msg)
+            """), {"cid": conversation_id, "uid": user_id, "msg": message_text})
+            db.session.commit()
+            # Redirect to prevent form resubmission
+            return redirect(url_for("founder_messages", conversation_id=conversation_id))
+
     founder = db.session.execute(text("SELECT id FROM founder_profiles WHERE user_id=:uid"), {"uid": user_id}).fetchone()
 
+    # Fetch Conversations List
     conversations = db.session.execute(text("""
         SELECT c.id, u.full_name, ip.fund_name, 
         (SELECT message FROM messages WHERE conversation_id=c.id ORDER BY created_at DESC LIMIT 1) AS last_msg,
@@ -885,13 +902,29 @@ def founder_messages(conversation_id=None):
     """), {"fid": founder.id, "uid": user_id}).fetchall()
 
     active_partner = None
+    active_chat = []  # Initialize empty list
+
     if conversation_id:
+        # Mark as read
         db.session.execute(text("UPDATE messages SET is_read=1 WHERE conversation_id=:cid AND sender_id!=:uid"), {"cid": conversation_id, "uid": user_id})
         db.session.commit()
+        
+        # Get Partner Details
         active_partner = db.session.execute(text("SELECT u.full_name, ip.fund_name FROM conversations c JOIN investor_profiles ip ON c.investor_id=ip.id JOIN users u ON ip.user_id=u.id WHERE c.id=:cid"), {"cid": conversation_id}).fetchone()
 
-    return render_template("dashboard/founder_messages.html", conversations=conversations, current_convo=conversation_id, active_partner=active_partner, user_id=user_id)
+        # 3. CRITICAL FIX: Fetch Messages for this conversation
+        active_chat = db.session.execute(text("""
+            SELECT * FROM messages WHERE conversation_id=:cid ORDER BY created_at ASC
+        """), {"cid": conversation_id}).fetchall()
 
+    return render_template(
+        "dashboard/founder_messages.html", 
+        conversations=conversations, 
+        current_convo=conversation_id, 
+        active_partner=active_partner, 
+        active_chat=active_chat,   # 4. Pass messages to template
+        user_id=user_id
+    )
 @app.route("/api/chat/<int:conversation_id>")
 def api_get_founder_chat(conversation_id):
     if session.get("role") != "founder": return {"error": "Unauthorized"}, 401
@@ -1362,7 +1395,7 @@ def investor_deal_view(founder_id):
             checklist = {}
             private_notes = ""
 
-    # -------------------------------------------------
+# -------------------------------------------------
     # 6. RENDER
     # -------------------------------------------------
     return render_template(
@@ -1379,11 +1412,16 @@ def investor_deal_view(founder_id):
         chart_labels=chart_labels,
         chart_rev=chart_rev,
         chart_exp=chart_exp,
+        
+        # FIX: Pass checklist explicitly so the template can find it
+        checklist=checklist, 
+        
         dd_data={
             "checklist": checklist,
             "private_notes": private_notes
         }
     )
+
 @app.route("/investor/deals")
 def investor_deals():
     if session.get("role") != "investor":
@@ -1660,17 +1698,26 @@ def update_investor_match(founder_id, action):
 # 🟢 INVESTOR MESSAGES
 # -------------------------------------------------
 @app.route("/investor/messages")
-@app.route("/investor/messages/<int:conversation_id>")
+@app.route("/investor/messages/<int:conversation_id>", methods=["GET", "POST"])
 def investor_messages(conversation_id=None):
     if session.get("role") != "investor": return redirect(url_for("login"))
     user_id = session.get("user_id")
 
-    # 1. Get Investor ID
+    # 1. HANDLE MESSAGE SENDING (POST)
+    if request.method == "POST" and conversation_id:
+        message_text = request.form.get("message")
+        if message_text:
+            db.session.execute(text("""
+                INSERT INTO messages (conversation_id, sender_id, message, created_at)
+                VALUES (:cid, :uid, :msg, NOW())
+            """), {"cid": conversation_id, "uid": user_id, "msg": message_text})
+            db.session.commit()
+            return redirect(url_for("investor_messages", conversation_id=conversation_id))
+
+    # 2. GET LOGIC
     investor = db.session.execute(text("SELECT id FROM investor_profiles WHERE user_id=:uid"), {"uid": user_id}).fetchone()
     if not investor: return redirect(url_for("investor_home"))
 
-    # 2. Fetch Conversations (Left Sidebar)
-    # We join founder_profiles to get Company Name & Users to get Founder Name
     conversations = db.session.execute(text("""
         SELECT 
             c.id, 
@@ -1684,33 +1731,28 @@ def investor_messages(conversation_id=None):
         JOIN users u ON fp.user_id = u.id
         WHERE c.investor_id = :iid
         ORDER BY last_time DESC
-    """), {"iid": investor.id, "uid": user_id}).fetchall()
+    """), {"iid": investor.id, "uid": user_id}).mappings().all()
 
     active_partner = None
     active_chat = []
 
-    # 3. Fetch Active Conversation (Right Chat Window)
     if conversation_id:
         # Mark messages as read
-        db.session.execute(text("""
-            UPDATE messages SET is_read = 1 
-            WHERE conversation_id = :cid AND sender_id != :uid
-        """), {"cid": conversation_id, "uid": user_id})
+        db.session.execute(text("UPDATE messages SET is_read = 1 WHERE conversation_id = :cid AND sender_id != :uid"), {"cid": conversation_id, "uid": user_id})
         db.session.commit()
 
-        # Get Founder Details
         active_partner = db.session.execute(text("""
             SELECT u.full_name, fp.company_name 
             FROM conversations c
             JOIN founder_profiles fp ON c.founder_id = fp.id
             JOIN users u ON fp.user_id = u.id
             WHERE c.id = :cid
-        """), {"cid": conversation_id}).fetchone()
+        """), {"cid": conversation_id}).mappings().first()
 
-        # Get Messages
+        # --- FIX IS HERE: Use .mappings().all() instead of .fetchall() ---
         active_chat = db.session.execute(text("""
             SELECT * FROM messages WHERE conversation_id = :cid ORDER BY created_at ASC
-        """), {"cid": conversation_id}).fetchall()
+        """), {"cid": conversation_id}).mappings().all()
 
     return render_template(
         "dashboard/investor_messages.html", 
@@ -1720,8 +1762,6 @@ def investor_messages(conversation_id=None):
         active_chat=active_chat,
         user_id=user_id
     )
-
-
 # -------------------------------------------------
 # 🟢 INVESTOR PORTFOLIO (Fund Intelligence)
 # -------------------------------------------------

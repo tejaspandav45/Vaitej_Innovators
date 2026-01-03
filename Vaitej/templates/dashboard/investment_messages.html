@@ -1,8 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Investment Messages | Vaitej Ventures</title>
+    <title>Investor Inbox | Vaitej Ventures</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    <style>
+        /* --- CRITICAL STYLES FOR VISIBILITY --- */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0,0,0,0.2); /* Darker background for contrast */
+        }
+
+        .msg-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 75%;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            color: white; /* Text color */
+            word-wrap: break-word;
+        }
+
+        /* SENT BY ME (Right - Purple/Indigo) */
+        .msg-sent {
+            align-self: flex-end;
+            background-color: #7c3aed; /* Primary Purple */
+            border-bottom-right-radius: 2px;
+        }
+
+        /* RECEIVED (Left - Dark Slate) */
+        .msg-received {
+            align-self: flex-start;
+            background-color: #334155; /* Slate Gray */
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-meta {
+            font-size: 0.7rem; 
+            color: #94a3b8; 
+            margin-top: 4px; 
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
 <body>
 
@@ -10,63 +55,94 @@
     {% include "dashboard/investor_sidebar.html" %}
 
     <main class="dashboard-content">
+        <h1 style="margin-bottom: 1.5rem;">Messages</h1>
 
-        <!-- HEADER -->
-        <header class="page-header">
-            <div>
-                <h1>Investment Messages</h1>
-                <p>Communicate with founders across your deal rooms.</p>
-            </div>
-        </header>
+        <div class="msg-layout" style="height: calc(100vh - 150px);">
 
-        <!-- SEARCH -->
-        <div style="margin-bottom:1rem;">
-            <input type="text"
-                   placeholder="Search messages..."
-                   onkeyup="searchMessages(this.value)"
-                   style="width:100%; padding:10px; border-radius:8px;">
-        </div>
-
-        <!-- GRID -->
-        <div class="dashboard-grid" style="grid-template-columns: 1.3fr 2.7fr;">
-
-            <!-- INBOX -->
-            <div class="glass" style="padding:1rem; height:70vh; overflow-y:auto;">
-                <h3 style="margin-bottom:1rem;">Inbox</h3>
-
+            <aside class="msg-sidebar glass">
                 {% if conversations %}
                     {% for c in conversations %}
-                        <div onclick="openConversation({{ c.convo_id }})"
-                             style="padding:10px; border-radius:8px; margin-bottom:8px;
-                                    cursor:pointer;
-                                    background:{% if c.unread_count > 0 %}rgba(99,102,241,0.15){% else %}rgba(255,255,255,0.05){% endif %};">
-
-                            <div style="display:flex; justify-content:space-between;">
-                                <strong>{{ c.company_name or c.fund_name }}</strong>
-                                {% if c.unread_count > 0 %}
-                                    <span class="badge badge-success">{{ c.unread_count }}</span>
-                                {% endif %}
-                            </div>
-
-                            <div class="text-secondary" style="font-size:0.8rem;">
-                                {{ c.last_message or "No messages yet" }}
-                            </div>
+                    <a href="{{ url_for('investor_messages', conversation_id=c.id) }}"
+                       class="convo-item {% if current_convo and c.id == current_convo %}active{% endif %}">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ c.full_name }}</span>
+                            {% if c.last_time %}
+                            <span style="font-size: 0.75rem; color: var(--text-tertiary);">{{ c.last_time.strftime('%H:%M') }}</span>
+                            {% endif %}
                         </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">{{ c.company_name }}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if c.unread_count > 0 %}<span style="color: var(--accent-primary);">●</span>{% endif %}
+                            {{ c.last_msg or "Start conversation..." }}
+                        </div>
+                    </a>
                     {% endfor %}
                 {% else %}
-                    <div class="empty-state">No conversations yet.</div>
+                    <div style="padding: 2rem; text-align: center; color: var(--text-tertiary);">
+                        <p>No conversations yet.</p>
+                    </div>
                 {% endif %}
-            </div>
+            </aside>
 
-            <!-- CHAT PREVIEW -->
-            <div id="chatPanel" class="glass"
-                 style="padding:1.5rem; height:70vh; overflow-y:auto;">
+            <section class="chat-window glass" style="display: flex; flex-direction: column;">
+                {% if current_convo %}
+                    
+                    <div class="chat-header" style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 35px; height: 35px; background: #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight:bold;">
+                                {{ active_partner.full_name[0] }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">{{ active_partner.full_name }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                    {{ active_partner.company_name }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="empty-state">
-                    Select a conversation to preview messages
-                </div>
+                    <div class="messages-area" id="msgContainer">
+                        {% if active_chat %}
+                            {% for m in active_chat %}
+                                <div style="display: flex; flex-direction: column; align-items: {{ 'flex-end' if m.sender_id == user_id else 'flex-start' }};">
+                                    <div class="msg-bubble {{ 'msg-sent' if m.sender_id == user_id else 'msg-received' }}">
+                                        {{ m.message }}
+                                    </div>
+                                    <div class="msg-meta">
+                                        {{ m.created_at.strftime('%H:%M') }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div style="text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-tertiary);">
+                                <small>No messages yet. Say hello!</small>
+                            </div>
+                        {% endif %}
+                    </div>
 
-            </div>
+                    <div class="chat-input-area" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <form method="POST" action="{{ url_for('investor_messages', conversation_id=current_convo) }}" style="display: flex; gap: 10px; width: 100%;">
+                            
+                            <input type="text" 
+                                   name="message" 
+                                   id="msgInput" 
+                                   autocomplete="off" 
+                                   placeholder="Type a message..." 
+                                   required 
+                                   style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px;">
+                            
+                            <button type="submit" class="btn-primary" style="padding: 0 1.5rem; border-radius: 8px;">
+                                Send
+                            </button>
+                        </form>
+                    </div>
+
+                {% else %}
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-tertiary);">
+                        <h3>Select a conversation</h3>
+                    </div>
+                {% endif %}
+            </section>
 
         </div>
 
@@ -74,59 +150,13 @@
 </div>
 
 <script>
-const CURRENT_USER_ID = {{ session.user_id }};
-
-function openConversation(convoId) {
-    fetch(`/api/messages/${convoId}`)
-        .then(res => res.json())
-        .then(data => {
-            const panel = document.getElementById("chatPanel");
-            panel.innerHTML = "";
-
-            if (!data.messages.length) {
-                panel.innerHTML = "<div class='empty-state'>No messages yet.</div>";
-                return;
-            }
-
-            data.messages.forEach(m => {
-                panel.innerHTML += `
-                    <div class="chat-message ${m.sender_id === CURRENT_USER_ID ? 'me' : ''}">
-                        <div class="sender">${m.full_name}</div>
-                        <div class="bubble">${m.message || ""}</div>
-                        ${m.attachment_url ? `<a href="/${m.attachment_url}" target="_blank">📎 Attachment</a>` : ""}
-                    </div>
-                `;
-            });
-
-            panel.innerHTML += `
-                <div style="margin-top:1rem;">
-                    <a href="/messages/${convoId}" class="btn-outline btn-sm">
-                        Open Full Chat
-                    </a>
-                    <button onclick="getSummary(${convoId})"
-                            class="btn-outline btn-sm"
-                            style="margin-left:8px;">
-                        AI Summary
-                    </button>
-                </div>
-            `;
-        });
-}
-
-function getSummary(convoId) {
-    fetch(`/messages/summary/${convoId}`)
-        .then(res => res.json())
-        .then(data => {
-            alert(data.summary);
-        });
-}
-
-function searchMessages(q) {
-    if (!q) return;
-    fetch(`/messages/search?q=${encodeURIComponent(q)}`)
-        .then(res => res.json())
-        .then(data => console.log(data.results));
-}
+    document.addEventListener("DOMContentLoaded", function() {
+        var container = document.getElementById("msgContainer");
+        if(container) {
+            container.scrollTop = container.scrollHeight;
+        }
+        document.getElementById("msgInput")?.focus();
+    });
 </script>
 
 </body>
